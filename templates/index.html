@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HVAC Energy Optimization Model for Gym Environments">
+    <title>Gym HVAC Optimizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Controls Card -->
+        <div class="glass-card">
+            <h1>HVAC Optimizer</h1>
+            <p class="subtitle">AI-driven adaptive setpoint algorithm for gym environments.</p>
+
+            <form id="optimization-form">
+                <div class="form-group">
+                    <label for="occupancy">Occupancy Level (People)</label>
+                    <div class="range-container">
+                        <input type="range" id="occupancy" name="occupancy" min="0" max="100" value="25">
+                        <span class="value-display" id="occupancy-val">25</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="outdoor-temp">Outdoor Temperature (°C)</label>
+                    <div class="range-container">
+                        <input type="range" id="outdoor-temp" name="outdoor-temp" min="-10" max="45" value="22" step="0.5">
+                        <span class="value-display" id="temp-val">22.0°</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="outdoor-humidity">Outdoor Humidity (%)</label>
+                    <div class="range-container">
+                        <input type="range" id="outdoor-humidity" name="outdoor-humidity" min="0" max="100" value="50">
+                        <span class="value-display" id="humidity-val">50%</span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-optimize" id="btn-optimize">
+                    <span id="btn-text">Optimize Settings</span>
+                    <div class="loader" id="loader"></div>
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Card -->
+        <div class="glass-card results-card" id="results-card">
+            <div id="results-content" class="visible">
+                <div class="result-item">
+                    <div class="result-label">Recommended Setpoint</div>
+                    <div class="setpoint-value" id="res-setpoint">22.0<span style="font-size: 2rem; font-weight: 500;">°C</span></div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Optimal AC Mode</div>
+                    <div class="mode-badge mode-Auto" id="res-mode">Auto</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update display values for range inputs
+        const updateDisplay = (inputId, displayId, suffix = '') => {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(displayId);
+            
+            // Initial setting
+            display.textContent = input.value + suffix;
+            
+            // On input change
+            input.addEventListener('input', (e) => {
+                let val = e.target.value;
+                if(inputId === 'outdoor-temp' && !val.includes('.')) val += '.0';
+                display.textContent = val + suffix;
+            });
+        };
+
+        updateDisplay('occupancy', 'occupancy-val');
+        updateDisplay('outdoor-temp', 'temp-val', '°');
+        updateDisplay('outdoor-humidity', 'humidity-val', '%');
+
+        // Form submission via API
+        document.getElementById('btn-optimize').addEventListener('click', async () => {
+            const btnText = document.getElementById('btn-text');
+            const loader = document.getElementById('loader');
+            
+            // UI state
+            btnText.classList.add('hidden');
+            loader.style.display = 'block';
+            
+            const payload = {
+                occupancy: document.getElementById('occupancy').value,
+                outdoor_temp: document.getElementById('outdoor-temp').value,
+                outdoor_humidity: document.getElementById('outdoor-humidity').value
+            };
+
+            try {
+                const response = await fetch('/api/optimize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if(result.success) {
+                    const data = result.data;
+                    
+                    // Update UI with results
+                    const resContent = document.getElementById('results-content');
+                    resContent.classList.remove('visible');
+                    
+                    setTimeout(() => {
+                        document.getElementById('res-setpoint').innerHTML = `${data.setpoint.toFixed(1)}<span style="font-size: 2rem; font-weight: 500;">°C</span>`;
+                        
+                        const modeBadge = document.getElementById('res-mode');
+                        modeBadge.textContent = data.mode;
+                        modeBadge.className = `mode-badge mode-${data.mode}`;
+                        
+                        resContent.classList.add('visible');
+                    }, 100);
+                } else {
+                    alert('Error optimizing HVAC settings.');
+                }
+            } catch (error) {
+                console.error("Error calling API", error);
+                alert('Connection error.');
+            } finally {
+                // Revert UI state
+                btnText.classList.remove('hidden');
+                loader.style.display = 'none';
+            }
+        });
+        
+        // Initial load optimization call
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btn-optimize').click();
+        });
+    </script>
+</body>
+</html>
