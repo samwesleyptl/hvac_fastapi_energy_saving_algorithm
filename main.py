@@ -26,7 +26,7 @@ async def index(request: Request):
 @app.post("/api/optimize")
 async def optimize(req: OptimizationRequest):
     try:
-        result = optimize_hvac(req.occupancy, req.outdoor_temp, req.outdoor_humidity)
+        result = await optimize_hvac(req.occupancy, req.outdoor_temp, req.outdoor_humidity)
         return {"success": True, "data": result}
     except Exception as e:
         return {"success": False, "error": str(e)}

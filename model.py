@@ -1,4 +1,4 @@
-def optimize_hvac(occupancy: int, outdoor_temp: float, outdoor_humidity: float) -> dict:
+async def optimize_hvac(occupancy: int, outdoor_temp: float, outdoor_humidity: float) -> dict:
     """
     Calculates the optimal HVAC setpoint and AC mode for a gym environment.
     
