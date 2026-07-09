@@ -10,8 +10,7 @@ from service import optimize_hvac
 from database import engine, get_db
 import models
 
-# Create database tables
-models.Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI(title="Gym HVAC Optimizer")
 
